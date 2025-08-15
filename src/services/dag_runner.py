@@ -1,7 +1,7 @@
 import asyncio
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from graphlib import TopologicalSorter
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from celery import group
 
@@ -17,6 +17,7 @@ class Job:
     state: JobState = JobState.PENDING
     progress: int = 0
     total: int = 0
+    outputs: List[Dict[str, Any]] = field(default_factory=list)
 
 
 class DAGRunner:

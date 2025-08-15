@@ -1,0 +1,77 @@
+planner:
+  primary:
+    provider: openai
+    model: gpt-4o
+    params: {}
+    budgets:
+      max_tokens: 1000
+      max_latency: 30
+    cost_per_token: 0.00001
+  fallbacks:
+    - provider: anthropic
+      model: claude-3-opus
+      params: {}
+      budgets:
+        max_tokens: 1000
+        max_latency: 30
+      cost_per_token: 0.00002
+
+# Strong model also for designer
+# Fallback to same as planner
+
+designer:
+  primary:
+    provider: openai
+    model: gpt-4o
+    params: {}
+    budgets:
+      max_tokens: 1000
+      max_latency: 30
+    cost_per_token: 0.00001
+  fallbacks:
+    - provider: anthropic
+      model: claude-3-opus
+      params: {}
+      budgets:
+        max_tokens: 1000
+        max_latency: 30
+      cost_per_token: 0.00002
+
+# Smaller/faster for implementer
+implementer:
+  primary:
+    provider: openai
+    model: gpt-4o-mini
+    params: {}
+    budgets:
+      max_tokens: 500
+      max_latency: 15
+    cost_per_token: 0.000005
+  fallbacks:
+    - provider: groq
+      model: llama3-8b
+      params: {}
+      budgets:
+        max_tokens: 500
+        max_latency: 15
+      cost_per_token: 0.000003
+
+# Smaller/faster for deployer
+
+deployer:
+  primary:
+    provider: google
+    model: gemini-pro
+    params: {}
+    budgets:
+      max_tokens: 500
+      max_latency: 15
+    cost_per_token: 0.000004
+  fallbacks:
+    - provider: openrouter
+      model: gpt-4o-mini
+      params: {}
+      budgets:
+        max_tokens: 500
+        max_latency: 15
+      cost_per_token: 0.000005
