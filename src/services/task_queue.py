@@ -38,3 +38,30 @@ def file_task(project_id: int, path: str, content: str | None = None):
     else:
         data = loop.run_until_complete(fs_service.read_file(path))
         return data.tobytes().decode("utf-8")
+
+
+# Build DAG related tasks
+
+
+@celery_app.task(name="index_repo")
+def index_repo(job_id: int, project_id: int, params: dict | None = None):
+    """Index the repository for a project."""
+    return asyncio.run(index_service.build_index(project_id))
+
+
+@celery_app.task(name="implement_endpoints")
+def implement_endpoints(job_id: int, project_id: int, params: dict | None = None):
+    """Placeholder task ensuring route stubs and tests exist."""
+    return {"status": "ok"}
+
+
+@celery_app.task(name="write_tests")
+def write_tests(job_id: int, project_id: int, params: dict | None = None):
+    """Placeholder task that would add missing skeleton tests."""
+    return {"status": "ok"}
+
+
+@celery_app.task(name="configure_ci")
+def configure_ci(job_id: int, project_id: int, params: dict | None = None):
+    """Placeholder task ensuring a CI workflow exists."""
+    return {"status": "ok"}
