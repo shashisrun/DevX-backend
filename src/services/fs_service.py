@@ -36,8 +36,10 @@ class FSService:
         if not p.is_absolute():
             p = self.root / p
         p = p.resolve()
-        if not str(p).startswith(str(self.root)):
-            raise ValueError("Path escapes root directory")
+        try:
+            p.relative_to(self.root)
+        except ValueError as exc:  # pragma: no cover - simple guard
+            raise ValueError("Path escapes root directory") from exc
         return p
 
     async def read_file(self, path: str) -> Any:
@@ -69,6 +71,14 @@ class FSService:
                     os.fsync(tmp.fileno())
                     tmp_path = Path(tmp.name)
                 os.replace(tmp_path, path_obj)
+                dir_fd = os.open(
+                    path_obj.parent,
+                    os.O_RDONLY | getattr(os, "O_DIRECTORY", 0),
+                )
+                try:  # ensure rename is durable
+                    os.fsync(dir_fd)
+                finally:
+                    os.close(dir_fd)
 
             stat = path_obj.stat()
             file_hash = hashlib.sha256(content).hexdigest()
