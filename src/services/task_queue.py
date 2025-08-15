@@ -3,6 +3,7 @@ from ..config import settings
 from .index_service import IndexService
 from .diff_service import DiffService
 from .fs_service import FSService
+from .ws_manager import ws_broadcast
 import asyncio
 
 celery_app = Celery(
@@ -18,12 +19,26 @@ fs_service = FSService()
 @celery_app.task
 def index_task(project_id: int):
     loop = asyncio.get_event_loop()
-    return loop.run_until_complete(index_service.build_index(project_id))
+
+    async def progress(percent: int, path: str) -> None:
+        await ws_broadcast(
+            {
+                "type": "job.progress",
+                "project_id": project_id,
+                "payload": {"percent": percent, "path": path},
+            }
+        )
+
+    return loop.run_until_complete(
+        index_service.build_index(project_id, progress_cb=progress)
+    )
 
 @celery_app.task
-def search_task(project_id: int, query: str):
+def search_task(project_id: int, query: str, lang: str | None = None, path: str | None = None):
     loop = asyncio.get_event_loop()
-    return loop.run_until_complete(index_service.search_index(query))
+    return loop.run_until_complete(
+        index_service.search_index(project_id, query, lang=lang, path=path)
+    )
 
 @celery_app.task
 def diff_task(project_id: int, before: str, after: str):
