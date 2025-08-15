@@ -13,3 +13,4 @@ maturin
 greenlet
 alembic
 jsonschema
+aiosqlite
