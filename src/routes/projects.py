@@ -20,6 +20,7 @@ from ..agents.contracts import PlannerInput, DesignerInput
 from ..agents.registry import planner as planner_agent, designer as designer_agent
 from ..config import settings
 from ..services.test_service import TestService
+from ..services.deploy_service import DeployService
 
 router = APIRouter()
 
@@ -127,8 +128,9 @@ async def test_project(project_id: int, session: AsyncSession = Depends(get_sess
 @router.post("/{project_id}/deploy", response_model=Project)
 async def deploy_project(project_id: int, session: AsyncSession = Depends(get_session)):
     project = await get_project(session, project_id)
-    await _deploy(project=project, session=session)
-    project = await advance_state(session, project, ProjectStatus.MONITOR)
+    result = await _deploy(project=project, session=session)
+    if isinstance(result, dict) and result.get("ok"):
+        project = await advance_state(session, project, ProjectStatus.MONITOR)
     return project
 
 
@@ -300,10 +302,6 @@ async def _test(*, project: Project, session: AsyncSession):
 
 @enforce_state(from_=[ProjectStatus.REVIEW], to=ProjectStatus.DEPLOY)
 async def _deploy(*, project: Project, session: AsyncSession):
-    await ws_broadcast(
-        {
-            "type": "deploy.status",
-            "project_id": project.id,
-            "payload": {"status": "success"},
-        }
-    )
+    service = DeployService()
+    result = await service.deploy(session, project)
+    return {"ok": result.ok, "image_ref": result.image_ref}

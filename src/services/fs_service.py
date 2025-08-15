@@ -31,7 +31,7 @@ class FSService:
 
     def _safe_path(self, path: str) -> Path:
         """Return an absolute path ensured to be within the root directory."""
-
+        from fastapi import HTTPException
         p = Path(path)
         if not p.is_absolute():
             p = self.root / p
@@ -39,7 +39,8 @@ class FSService:
         try:
             p.relative_to(self.root)
         except ValueError as exc:  # pragma: no cover - simple guard
-            raise ValueError("Path escapes root directory") from exc
+            # Translate traversal attempts to HTTP 403 for routes using FSService
+            raise HTTPException(status_code=403, detail="Path escapes root directory") from exc
         return p
 
     async def read_file(self, path: str) -> Any:
@@ -87,4 +88,3 @@ class FSService:
             return meta
 
         return await loop.run_in_executor(None, _write)
-

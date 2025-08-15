@@ -182,3 +182,54 @@ MIT
 
 For questions or contributions, please open an issue or PR in this repository.
 ```
+
+---
+
+## 🏁 Quickstart
+
+Local (SQLite):
+- `python3 -m venv .venv && source .venv/bin/activate`
+- `pip install -r requirements.txt`
+- `export DATABASE_URL=sqlite+aiosqlite:///dev.db`
+- `uvicorn src.main:app --reload`
+
+Docker:
+- `docker build -t devinx-backend .`
+- `docker compose up -d`
+- API at `http://localhost:8000`
+
+End-to-end (REST):
+- Create project: `curl -s -X POST localhost:8000/api/projects/ -H 'Content-Type: application/json' -d '{"name":"demo"}'`
+- Save `PID` from response, then:
+  - `curl -s -X POST localhost:8000/api/projects/$PID/init -H 'Content-Type: application/json' -d '{"features":["hello world"]}'`
+  - `curl -s -X POST localhost:8000/api/projects/$PID/plan`
+  - `curl -s -X POST localhost:8000/api/projects/$PID/design`
+  - `curl -s -X POST localhost:8000/api/projects/$PID/test`
+  - `curl -s -X POST localhost:8000/api/projects/$PID/deploy`
+
+WebSocket:
+- Connect to `ws://localhost:8000/ws/$PID` and observe `state.changed`, `job.*`, `qa.report`, `deploy.status`.
+
+## 🔑 Provider Setup
+
+Configure LLM providers via environment variables:
+- `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` (optional)
+- Router config: `src/agents/config/models.yaml`
+- No keys required for running tests; provider calls are stubbed in unit tests.
+
+## 🧯 Troubleshooting
+
+- DB errors: use SQLite for local quickstart (`sqlite+aiosqlite:///dev.db`); delete stale `test.db` if needed.
+- 409 transitions: follow lifecycle order (`NEW → DISCOVERY → PLANNING → DESIGN → BUILD → TEST → REVIEW → DEPLOY → MONITOR`).
+- Missing WS events: ensure you connect to `/ws/{project_id}`; note WS throttling (max ~100 msgs/sec/project).
+- 403 on artifacts: FS sandbox blocks traversal; artifact `uri` must be within repo root.
+
+---
+
+## 📚 Documentation
+
+- Architecture: `docs/ARCHITECTURE.md`
+- Agents: `docs/AGENTS.md`
+- API: `docs/API.md`
+- Lifecycle: `docs/LIFECYCLE.md`
+- Operations: `docs/OPERATIONS.md`

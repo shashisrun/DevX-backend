@@ -6,11 +6,13 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 from ..utils.schema import validate_schema
+import time
 
 
 class ConnectionManager:
     def __init__(self) -> None:
         self.active_connections: Dict[int, List[WebSocket]] = defaultdict(list)
+        self._rate: Dict[int, List[float]] = defaultdict(list)  # project_id -> timestamps
 
     async def connect(self, websocket: WebSocket, project_id: int) -> None:
         await websocket.accept()
@@ -25,6 +27,13 @@ class ConnectionManager:
                 break
 
     async def broadcast(self, project_id: int, message: dict) -> None:
+        # Basic rate limit to avoid flooding: 100 msgs/sec per project
+        now = time.time()
+        buf = self._rate[project_id]
+        buf[:] = [t for t in buf if now - t < 1.0]
+        if len(buf) >= 100:
+            return
+        buf.append(now)
         data = json.dumps(message)
         for connection in list(self.active_connections.get(project_id, [])):
             try:

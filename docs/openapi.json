@@ -1,0 +1,38 @@
+{
+  "openapi": "3.1.0",
+  "info": {"title": "Devinx Backend API", "version": "0.1.0"},
+  "paths": {
+    "/health": {"get": {"summary": "Health check", "responses": {"200": {"description": "OK"}}}},
+    "/api/projects/": {
+      "get": {"summary": "List projects", "responses": {"200": {"description": "OK"}}},
+      "post": {"summary": "Create project", "responses": {"200": {"description": "OK"}}}
+    },
+    "/api/projects/{project_id}/init": {
+      "post": {"summary": "Initialize project with requirements", "parameters": [{"name": "project_id", "in": "path", "required": true, "schema": {"type": "integer"}}], "responses": {"200": {"description": "OK"}}}
+    },
+    "/api/projects/{project_id}/plan": {
+      "post": {"summary": "Plan project (advance to PLANNING)", "parameters": [{"name": "project_id", "in": "path", "required": true, "schema": {"type": "integer"}}], "responses": {"200": {"description": "OK"}}}
+    },
+    "/api/projects/{project_id}/approve": {
+      "post": {"summary": "Approve gate transition", "parameters": [{"name": "project_id", "in": "path", "required": true, "schema": {"type": "integer"}}, {"name": "gate", "in": "query", "required": true, "schema": {"type": "string"}}], "responses": {"200": {"description": "OK"}}}
+    },
+    "/api/projects/{project_id}/design": {
+      "post": {"summary": "Design artifacts and advance to BUILD", "parameters": [{"name": "project_id", "in": "path", "required": true, "schema": {"type": "integer"}}], "responses": {"200": {"description": "OK"}}}
+    },
+    "/api/projects/{project_id}/build": {
+      "post": {"summary": "Build (internal jobs)", "parameters": [{"name": "project_id", "in": "path", "required": true, "schema": {"type": "integer"}}], "responses": {"200": {"description": "OK"}}}
+    },
+    "/api/projects/{project_id}/test": {
+      "post": {"summary": "Run tests and transition", "parameters": [{"name": "project_id", "in": "path", "required": true, "schema": {"type": "integer"}}], "responses": {"200": {"description": "OK"}}}
+    },
+    "/api/projects/{project_id}/deploy": {
+      "post": {"summary": "Deploy and transition to MONITOR on success", "parameters": [{"name": "project_id", "in": "path", "required": true, "schema": {"type": "integer"}}], "responses": {"200": {"description": "OK"}}}
+    },
+    "/api/projects/{project_id}/artifacts": {
+      "get": {"summary": "List artifacts", "parameters": [{"name": "project_id", "in": "path", "required": true, "schema": {"type": "integer"}}, {"name": "kind", "in": "query", "required": false, "schema": {"type": "string"}}], "responses": {"200": {"description": "OK"}}}
+    },
+    "/api/projects/{project_id}/contracts": {
+      "get": {"summary": "Get contracts (openapi, events)", "parameters": [{"name": "project_id", "in": "path", "required": true, "schema": {"type": "integer"}}], "responses": {"200": {"description": "OK"}}}
+    }
+  }
+}
