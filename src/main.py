@@ -7,6 +7,7 @@ from .utils.security import BasicAuthMiddleware, RateLimitMiddleware
 from .db import init_db
 from .routes import projects, ws, index, search, diff, file
 import asyncio
+import structlog
 
 def create_app() -> FastAPI:
     setup_logging()
@@ -30,9 +31,27 @@ def create_app() -> FastAPI:
     app.include_router(diff.router)
     app.include_router(file.router)
 
+    @app.get("/")
+    async def root():
+        return {"status": "ok", "docs": "/docs", "health": "/health"}
+
     @app.on_event("startup")
     async def on_startup():
-        await init_db()
+        # Retry DB init to avoid crash loops if DB not ready yet
+        log = structlog.get_logger()
+        attempts = 0
+        while True:
+            try:
+                await init_db()
+                log.info("startup.db_ready")
+                break
+            except Exception as e:  # pragma: no cover - startup resiliency
+                attempts += 1
+                if attempts > 60:
+                    log.error("startup.db_failed", error=str(e))
+                    raise
+                log.warning("startup.db_retry", attempt=attempts, error=str(e))
+                await asyncio.sleep(1)
         # TODO: Connect to Redis, Celery, etc.
 
     @app.on_event("shutdown")
