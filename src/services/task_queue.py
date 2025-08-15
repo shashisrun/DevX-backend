@@ -26,14 +26,15 @@ def search_task(project_id: int, query: str):
     return loop.run_until_complete(index_service.search_index(query))
 
 @celery_app.task
-def diff_task(project_id: int, file_a: str, file_b: str):
+def diff_task(project_id: int, before: str, after: str):
     loop = asyncio.get_event_loop()
-    return loop.run_until_complete(diff_service.compute_diff(file_a, file_b))
+    return loop.run_until_complete(diff_service.compute_diff(before, after))
 
 @celery_app.task
-def file_task(project_id: int, path: str, content: str = None):
+def file_task(project_id: int, path: str, content: str | None = None):
     loop = asyncio.get_event_loop()
-    if content:
-        return loop.run_until_complete(fs_service.write_file(path, content))
+    if content is not None:
+        return loop.run_until_complete(fs_service.write_file(path, content.encode("utf-8")))
     else:
-        return loop.run_until_complete(fs_service.read_file(path))
+        data = loop.run_until_complete(fs_service.read_file(path))
+        return data.tobytes().decode("utf-8")

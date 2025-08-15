@@ -1,8 +1,20 @@
 import pytest
 from src.services.diff_service import DiffService
 
+
 @pytest.mark.asyncio
-async def test_compute_diff():
+async def test_compute_diff_known_sample():
     service = DiffService()
-    result = await service.compute_diff("a", "b")
-    assert result is not None
+    before = "hello\nworld\n"
+    after = "hello\nthere\nworld\n"
+    hunks = await service.compute_diff(before, after)
+    assert hunks == [
+        {
+            "old_start": 1,
+            "old_lines": 2,
+            "new_start": 1,
+            "new_lines": 3,
+            "lines": [" hello", "+there", " world"],
+        }
+    ]
+
