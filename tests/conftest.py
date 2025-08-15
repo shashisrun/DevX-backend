@@ -8,7 +8,7 @@ if ROOT not in sys.path:
 
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///test.db")
 
-from src.models import project  # ensure models are registered
+from src.models import project, file_meta  # ensure models are registered
 from src.db import init_db
 
 # Ensure database tables exist before tests run
