@@ -4,9 +4,9 @@ from ..services.ws_manager import manager
 router = APIRouter()
 
 
-@router.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await manager.connect(websocket)
+@router.websocket("/ws/{project_id}")
+async def websocket_endpoint(websocket: WebSocket, project_id: int):
+    await manager.connect(websocket, project_id)
     try:
         while True:
             await websocket.receive_text()

@@ -12,7 +12,7 @@ from ..models.artifact import Artifact
 from ..services.agent_service import AgentService
 from ..services.task_queue import index_task
 from ..utils.state_machine import advance_state, get_project, enforce_state
-from ..services.ws_manager import manager
+from ..services.ws_manager import ws_broadcast
 from uuid import uuid4
 from ..services.fs_service import FSService
 from ..utils.schema import validate_schema
@@ -214,7 +214,13 @@ async def _design(*, project: Project, session: AsyncSession):
 
 async def _build(*, project: Project, session: AsyncSession):
     for i in range(3):
-        await manager.broadcast({"type": "job.started", "node": i})
+        await ws_broadcast(
+            {
+                "type": "job.started",
+                "project_id": project.id,
+                "payload": {"node": i},
+            }
+        )
 
 
 @enforce_state(from_=[ProjectStatus.BUILD], to=ProjectStatus.TEST)
@@ -222,9 +228,21 @@ async def _test(*, project: Project, session: AsyncSession):
     report = {"passed": True}
     validate_schema(report, "test_report")
     await _save_artifact(session, project, "test_report", json.dumps(report))
-    await manager.broadcast({"type": "qa.report", "status": "passed"})
+    await ws_broadcast(
+        {
+            "type": "qa.report",
+            "project_id": project.id,
+            "payload": {"status": "passed"},
+        }
+    )
 
 
 @enforce_state(from_=[ProjectStatus.REVIEW], to=ProjectStatus.DEPLOY)
 async def _deploy(*, project: Project, session: AsyncSession):
-    await manager.broadcast({"type": "deploy.status", "status": "success"})
+    await ws_broadcast(
+        {
+            "type": "deploy.status",
+            "project_id": project.id,
+            "payload": {"status": "success"},
+        }
+    )
