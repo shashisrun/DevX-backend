@@ -19,6 +19,7 @@ from ..utils.schema import validate_schema
 from ..agents.contracts import PlannerInput, DesignerInput
 from ..agents.registry import planner as planner_agent, designer as designer_agent
 from ..config import settings
+from ..services.test_service import TestService
 
 router = APIRouter()
 
@@ -114,8 +115,12 @@ async def build_project(project_id: int, session: AsyncSession = Depends(get_ses
 @router.post("/{project_id}/test", response_model=Project)
 async def test_project(project_id: int, session: AsyncSession = Depends(get_session)):
     project = await get_project(session, project_id)
-    await _test(project=project, session=session)
-    project = await advance_state(session, project, ProjectStatus.REVIEW)
+    report = await _test(project=project, session=session)
+    # After _test, state moved BUILD -> TEST; choose next based on pass/fail
+    if isinstance(report, dict) and not report.get("passed", False):
+        project = await advance_state(session, project, ProjectStatus.TEST_FAIL)
+    else:
+        project = await advance_state(session, project, ProjectStatus.REVIEW)
     return project
 
 
@@ -286,16 +291,11 @@ async def _build(*, project: Project, session: AsyncSession):
 
 @enforce_state(from_=[ProjectStatus.BUILD], to=ProjectStatus.TEST)
 async def _test(*, project: Project, session: AsyncSession):
-    report = {"passed": True}
+    tester = TestService()
+    report = await tester.run_tests(project.id)
     validate_schema(report, "test_report")
     await _save_artifact(session, project, "test_report", json.dumps(report))
-    await ws_broadcast(
-        {
-            "type": "qa.report",
-            "project_id": project.id,
-            "payload": {"status": "passed"},
-        }
-    )
+    return report
 
 
 @enforce_state(from_=[ProjectStatus.REVIEW], to=ProjectStatus.DEPLOY)
