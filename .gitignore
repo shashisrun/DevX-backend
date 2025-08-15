@@ -1,0 +1,240 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+*.so
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+*.so
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.pyre/
+.ruff_cache/
+.cache/
+__pypackages__/
+*.sqlite
+*.sqlite3
+dev.db
+test.db
+*.db
+*.bak
+*.tmp
+*.log
+logs/
+artifacts/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment files
+.env
+.env.*
+
+# Packaging / build
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Editors / IDE
+.vscode/
+.idea/
+*.code-workspace
+.swp
+.swo
+.sublime*
+.project
+.settings/
+.history
+
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+
+# Docker
+.docker/
+docker-compose.override.yml
+docker-compose.*.yml
+
+# Rust (native crates)
+**/target/
+Cargo.lock
+
+# Node (if present)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Alembic compiled files
+alembic/versions/*.pyc
+alembic/versions/__pycache__/
+
+# Misc
+*.orig
+*.rej
+*.bak
+*.tmp
+*.old
+*.swp
+*.swo
+*~
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment files
+.env
+.env.*
+
+# Packaging / build
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Type checking / caches
+.mypy_cache/
+.pyre/
+.ruff_cache/
+.cache/
+__pypackages__/
+
+# Editors / IDE
+.vscode/
+.idea/
+*.code-workspace
+.swp
+.swo
+.sublime*
+.project
+.settings/
+.history
+
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+
+# Databases
+*.sqlite
+*.sqlite3
+dev.db
+test.db
+
+# Runtime artifacts
+artifacts/
+logs/
+*.log
+
+# Docker
+.docker/
+docker-compose.override.yml
+docker-compose.*.yml
+
+# Rust (native crates)
+**/target/
+Cargo.lock
+
+# Node (if present)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Alembic compiled files
+alembic/versions/*.pyc
+alembic/versions/__pycache__/
+
+# Misc
+*.orig
+*.rej
+*.bak
+*.tmp
+*.old
+*.swp
+*.swo
+*~
+
+# Environment files
+.env
+
+# Packaging / build
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Type checking / caches
+.mypy_cache/
+.pyre/
+.ruff_cache/
+.cache/
+__pypackages__/
+
+# Editors / IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Databases
+*.sqlite
+*.sqlite3
+dev.db
+test.db
+
+# Runtime artifacts
+artifacts/
+logs/
+*.log
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Rust (native crates)
+**/target/
+
+# Node (if present)
+node_modules/
+
+# Alembic compiled files
+alembic/versions/*.pyc
