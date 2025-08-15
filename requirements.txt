@@ -1,0 +1,14 @@
+fastapi
+sqlmodel
+psycopg2-binary
+celery
+redis
+structlog
+uvicorn
+pytest
+httpx
+pydantic-settings
+asyncpg
+maturin
+greenlet
+alembic
