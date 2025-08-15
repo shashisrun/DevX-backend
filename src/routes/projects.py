@@ -16,6 +16,9 @@ from ..services.ws_manager import ws_broadcast
 from uuid import uuid4
 from ..services.fs_service import FSService
 from ..utils.schema import validate_schema
+from ..agents.contracts import PlannerInput, DesignerInput
+from ..agents.registry import planner as planner_agent, designer as designer_agent
+from ..config import settings
 
 router = APIRouter()
 
@@ -188,17 +191,50 @@ async def _save_artifact(session: AsyncSession, project: Project, kind: str, con
 @enforce_state(from_=[ProjectStatus.NEW], to=ProjectStatus.DISCOVERY)
 async def _init(*, project: Project, session: AsyncSession, requirements: dict):
     await _save_artifact(session, project, "requirements", json.dumps(requirements))
+    # Fire planner autonomously to generate an initial plan artifact
+    job_id = uuid4().hex
+    await ws_broadcast(
+        {"type": "job.started", "project_id": project.id, "payload": {"job_id": job_id, "stage": "planning"}}
+    )
+    # Build planner input from requirements (features list)
+    feats = requirements.get("features", []) if isinstance(requirements, dict) else []
+    try:
+        await planner_agent(session, project.id, PlannerInput(requirements=feats))
+        await ws_broadcast(
+            {
+                "type": "job.completed",
+                "project_id": project.id,
+                "payload": {"job_id": job_id, "stage": "planning"},
+            }
+        )
+    except Exception as e:  # pragma: no cover - defensive
+        await ws_broadcast(
+            {
+                "type": "job.failed",
+                "project_id": project.id,
+                "payload": {"job_id": job_id, "stage": "planning", "error": str(e)},
+            }
+        )
 
 
 @enforce_state(from_=[ProjectStatus.DISCOVERY], to=ProjectStatus.PLANNING)
 async def _plan(*, project: Project, session: AsyncSession):
-    plan_obj = {
-        "dag": {"nodes": [], "edges": []},
-        "summary": "Auto-generated plan",
-    }
-    validate_schema(plan_obj, "plan")
-    content = json.dumps(plan_obj)
-    await _save_artifact(session, project, "plan", content)
+    # If a plan already exists, do not regenerate
+    result = await session.execute(
+        select(Artifact).where(Artifact.project_id == project.id).where(Artifact.kind == "plan")
+    )
+    existing = result.scalars().first()
+    if existing:
+        return
+    # Otherwise run planner and persist
+    job_id = uuid4().hex
+    await ws_broadcast(
+        {"type": "job.started", "project_id": project.id, "payload": {"job_id": job_id, "stage": "planning"}}
+    )
+    await planner_agent(session, project.id, PlannerInput(requirements=[]))
+    await ws_broadcast(
+        {"type": "job.completed", "project_id": project.id, "payload": {"job_id": job_id, "stage": "planning"}}
+    )
 
 
 @enforce_state(from_=[ProjectStatus.PLANNING], to=ProjectStatus.DESIGN)
@@ -207,11 +243,34 @@ async def _approve(*, project: Project, session: AsyncSession, gate: ProjectStat
         raise HTTPException(status_code=400, detail="Unsupported gate")
 
 
-@enforce_state(from_=[ProjectStatus.DESIGN], to=ProjectStatus.BUILD)
+@enforce_state(from_=[ProjectStatus.PLANNING, ProjectStatus.DESIGN], to=ProjectStatus.BUILD)
 async def _design(*, project: Project, session: AsyncSession):
-    await _save_artifact(session, project, "openapi", json.dumps({"openapi": "3.0.0"}))
-    await _save_artifact(session, project, "events", json.dumps({"events": []}))
-    await _save_artifact(session, project, "adrs", "# Architecture Decision Records\n")
+    # Optional approval gate: if enabled and still in PLANNING, block
+    if project.status == ProjectStatus.PLANNING and settings.REQUIRE_APPROVAL_PLANNING:
+        raise HTTPException(status_code=409, detail="Approval required for PLANNING gate")
+    job_id = uuid4().hex
+    await ws_broadcast(
+        {"type": "job.started", "project_id": project.id, "payload": {"job_id": job_id, "stage": "design"}}
+    )
+    # Drive designer agent and persist artifacts
+    # Load existing plan JSON if present
+    plan_result = await session.execute(
+        select(Artifact).where(Artifact.project_id == project.id).where(Artifact.kind == "plan")
+    )
+    plan_art = plan_result.scalars().first()
+    try:
+        designer_input = DesignerInput(plan=json.loads(plan_art.content) if plan_art and plan_art.content else {"dag": {}, "acceptance": []})
+    except Exception:
+        designer_input = DesignerInput(plan={"dag": {}, "acceptance": []})
+    # Run designer agent (persists a generic design doc)
+    await designer_agent(session, project.id, designer_input)
+    # Also persist expected artifacts for contracts API
+    await _save_artifact(session, project, "openapi", json.dumps({"openapi": "3.0.0", "info": {"title": project.name, "version": "0.0.1"}}))
+    await _save_artifact(session, project, "events", json.dumps({"events": ["job.started", "job.progress", "job.completed", "job.failed", "state.changed"]}))
+    await _save_artifact(session, project, "adrs", "# Architecture Decision Records\n\n- Initial design accepted.\n")
+    await ws_broadcast(
+        {"type": "job.completed", "project_id": project.id, "payload": {"job_id": job_id, "stage": "design"}}
+    )
 
 
 async def _build(*, project: Project, session: AsyncSession):

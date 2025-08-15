@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     FASTAPI_PORT: int = Field(default=8000, env="FASTAPI_PORT")
     LOG_LEVEL: str = Field(default="INFO", env="LOG_LEVEL")
     WEBSOCKET_URL: str = Field(default="ws://localhost:8000/ws", env="WEBSOCKET_URL")
+    REQUIRE_APPROVAL_PLANNING: bool = Field(default=False, env="REQUIRE_APPROVAL_PLANNING")
     class Config:
         env_file = ".env"
 
