@@ -140,7 +140,8 @@ async def list_artifacts(
     for art in artifacts:
         content = art.content
         if not content and art.uri:
-            content = await fs.read_file(art.uri)
+            data = await fs.read_file(art.uri)
+            content = data.tobytes().decode("utf-8")
         resp.append(
             {
                 "id": art.id,
@@ -163,7 +164,8 @@ async def get_contracts(project_id: int, session: AsyncSession = Depends(get_ses
     for art in artifacts:
         content = art.content
         if not content and art.uri:
-            content = await fs.read_file(art.uri)
+            data = await fs.read_file(art.uri)
+            content = data.tobytes().decode("utf-8")
         contracts[art.kind] = content
     return contracts
 
@@ -173,7 +175,7 @@ async def _save_artifact(session: AsyncSession, project: Project, kind: str, con
     artifact = Artifact(project_id=project.id, kind=kind)
     if content and len(content) > 1000:
         path = f"artifacts/{uuid4().hex}.txt"
-        await fs.write_file(path, content)
+        await fs.write_file(path, content.encode("utf-8"))
         artifact.uri = path
     else:
         artifact.content = content
