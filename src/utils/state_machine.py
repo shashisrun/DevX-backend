@@ -7,6 +7,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.models.project import Project
 from src.models.enums import ProjectStatus
+from src.services.ws_manager import manager
 
 ALLOWED_TRANSITIONS = {
     ProjectStatus.NEW: {ProjectStatus.DISCOVERY},
@@ -55,6 +56,9 @@ async def advance_state(session: AsyncSession, project: Project, to_status: Proj
     session.add(project)
     await session.commit()
     await session.refresh(project)
+    await manager.broadcast(
+        {"type": "state.changed", "project_id": project.id, "status": project.status}
+    )
     return project
 
 
