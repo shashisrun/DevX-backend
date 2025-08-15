@@ -4,27 +4,60 @@ services:
     build: .
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/devinx
-      - REDIS_URL=redis://redis:6379/0
+      DATABASE_URL: ${DATABASE_URL:-postgresql://user:password@db:5432/devinx}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      BASIC_AUTH_ENABLED: ${BASIC_AUTH_ENABLED:-false}
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
   db:
     image: postgres:15
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: devinx
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-devinx}
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    volumes:
+      - pgdata:/var/lib/postgresql/data
   redis:
     image: redis:7
     ports:
       - "6379:6379"
   celery:
     build: .
+    env_file:
+      - .env
     command: celery -A src.services.task_queue.celery_app worker --loglevel=info
     depends_on:
+      backend:
+        condition: service_started
+      redis:
+        condition: service_started
+  test:
+    build: .
+    env_file:
+      - .env
+    command: pytest -q
+    depends_on:
       - backend
-      - redis
+volumes:
+  pgdata:

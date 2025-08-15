@@ -4,17 +4,17 @@ planner:
     model: gpt-4o
     params: {}
     budgets:
-      max_tokens: 1000
-      max_latency: 30
+      max_tokens: 2000
+      max_latency: 45
     cost_per_token: 0.00001
   fallbacks:
-    - provider: anthropic
-      model: claude-3-opus
+    - provider: groq
+      model: llama3-70b
       params: {}
       budgets:
-        max_tokens: 1000
-        max_latency: 30
-      cost_per_token: 0.00002
+        max_tokens: 2000
+        max_latency: 45
+      cost_per_token: 0.000003
 
 # Strong model also for designer
 # Fallback to same as planner
@@ -25,53 +25,107 @@ designer:
     model: gpt-4o
     params: {}
     budgets:
-      max_tokens: 1000
-      max_latency: 30
+      max_tokens: 1500
+      max_latency: 40
     cost_per_token: 0.00001
   fallbacks:
-    - provider: anthropic
-      model: claude-3-opus
+    - provider: groq
+      model: llama3-70b
       params: {}
       budgets:
-        max_tokens: 1000
-        max_latency: 30
-      cost_per_token: 0.00002
+        max_tokens: 1500
+        max_latency: 40
+      cost_per_token: 0.000003
 
 # Smaller/faster for implementer
 implementer:
   primary:
-    provider: openai
-    model: gpt-4o-mini
+    provider: groq
+    model: llama3-8b
     params: {}
     budgets:
-      max_tokens: 500
-      max_latency: 15
-    cost_per_token: 0.000005
+      max_tokens: 800
+      max_latency: 20
+    cost_per_token: 0.000003
   fallbacks:
-    - provider: groq
-      model: llama3-8b
+    - provider: openai
+      model: gpt-4o-mini
       params: {}
       budgets:
-        max_tokens: 500
-        max_latency: 15
+        max_tokens: 800
+        max_latency: 20
+      cost_per_token: 0.000005
+
+tester:
+  primary:
+    provider: groq
+    model: llama3-8b
+    params: {}
+    budgets:
+      max_tokens: 400
+      max_latency: 20
+    cost_per_token: 0.000003
+  fallbacks:
+    - provider: openai
+      model: gpt-4o-mini
+      params: {}
+      budgets:
+        max_tokens: 400
+        max_latency: 20
+      cost_per_token: 0.000005
+
+reviewer:
+  primary:
+    provider: openai
+    model: gpt-4o
+    params: {}
+    budgets:
+      max_tokens: 1000
+      max_latency: 30
+    cost_per_token: 0.00001
+  fallbacks:
+    - provider: groq
+      model: llama3-70b
+      params: {}
+      budgets:
+        max_tokens: 1000
+        max_latency: 30
+      cost_per_token: 0.000003
+
+critic:
+  primary:
+    provider: openai
+    model: gpt-4o
+    params: {}
+    budgets:
+      max_tokens: 800
+      max_latency: 30
+    cost_per_token: 0.00001
+  fallbacks:
+    - provider: groq
+      model: llama3-70b
+      params: {}
+      budgets:
+        max_tokens: 800
+        max_latency: 30
       cost_per_token: 0.000003
 
 # Smaller/faster for deployer
 
 deployer:
   primary:
-    provider: google
-    model: gemini-pro
+    provider: groq
+    model: llama3-8b
     params: {}
     budgets:
-      max_tokens: 500
+      max_tokens: 300
       max_latency: 15
-    cost_per_token: 0.000004
+    cost_per_token: 0.000003
   fallbacks:
-    - provider: openrouter
+    - provider: openai
       model: gpt-4o-mini
       params: {}
       budgets:
-        max_tokens: 500
+        max_tokens: 300
         max_latency: 15
       cost_per_token: 0.000005
