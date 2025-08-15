@@ -12,3 +12,4 @@ asyncpg
 maturin
 greenlet
 alembic
+jsonschema

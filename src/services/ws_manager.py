@@ -1,6 +1,7 @@
 from fastapi import WebSocket
 from typing import List
 import json
+from ..utils.schema import validate_schema
 
 
 class ConnectionManager:
@@ -16,6 +17,7 @@ class ConnectionManager:
             self.active_connections.remove(websocket)
 
     async def broadcast(self, message: dict) -> None:
+        validate_schema(message, "events")
         data = json.dumps(message)
         for connection in list(self.active_connections):
             try:

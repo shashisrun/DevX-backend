@@ -16,7 +16,7 @@ async def test_lifecycle_basic():
         project_id = create.json()["id"]
 
         init_resp = await ac.post(
-            f"/api/projects/{project_id}/init", json={"req": "value"}
+            f"/api/projects/{project_id}/init", json={"features": ["value"]}
         )
         assert init_resp.status_code == 200
         assert init_resp.json()["status"] == "DISCOVERY"

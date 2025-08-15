@@ -15,6 +15,7 @@ from ..utils.state_machine import advance_state, get_project, enforce_state
 from ..services.ws_manager import manager
 from uuid import uuid4
 from ..services.fs_service import FSService
+from ..utils.schema import validate_schema
 
 router = APIRouter()
 
@@ -68,6 +69,7 @@ async def init_project(
     session: AsyncSession = Depends(get_session),
 ):
     project = await get_project(session, project_id)
+    validate_schema(requirements, "requirements")
     await _init(project=project, session=session, requirements=requirements)
     return project
 
@@ -122,6 +124,50 @@ async def deploy_project(project_id: int, session: AsyncSession = Depends(get_se
     return project
 
 
+@router.get("/{project_id}/artifacts")
+async def list_artifacts(
+    project_id: int,
+    kind: str | None = None,
+    session: AsyncSession = Depends(get_session),
+):
+    stmt = select(Artifact).where(Artifact.project_id == project_id)
+    if kind:
+        stmt = stmt.where(Artifact.kind == kind)
+    result = await session.execute(stmt)
+    artifacts = result.scalars().all()
+    fs = FSService()
+    resp = []
+    for art in artifacts:
+        content = art.content
+        if not content and art.uri:
+            content = await fs.read_file(art.uri)
+        resp.append(
+            {
+                "id": art.id,
+                "kind": art.kind,
+                "content": content,
+            }
+        )
+    return resp
+
+
+@router.get("/{project_id}/contracts")
+async def get_contracts(project_id: int, session: AsyncSession = Depends(get_session)):
+    stmt = select(Artifact).where(Artifact.project_id == project_id).where(
+        Artifact.kind.in_(["openapi", "events"])
+    )
+    result = await session.execute(stmt)
+    artifacts = result.scalars().all()
+    fs = FSService()
+    contracts = {}
+    for art in artifacts:
+        content = art.content
+        if not content and art.uri:
+            content = await fs.read_file(art.uri)
+        contracts[art.kind] = content
+    return contracts
+
+
 async def _save_artifact(session: AsyncSession, project: Project, kind: str, content: str) -> Artifact:
     fs = FSService()
     artifact = Artifact(project_id=project.id, kind=kind)
@@ -144,9 +190,12 @@ async def _init(*, project: Project, session: AsyncSession, requirements: dict):
 
 @enforce_state(from_=[ProjectStatus.DISCOVERY], to=ProjectStatus.PLANNING)
 async def _plan(*, project: Project, session: AsyncSession):
-    dag = {"nodes": []}
-    summary = "Auto-generated plan"
-    content = json.dumps({"dag": dag, "summary": summary})
+    plan_obj = {
+        "dag": {"nodes": [], "edges": []},
+        "summary": "Auto-generated plan",
+    }
+    validate_schema(plan_obj, "plan")
+    content = json.dumps(plan_obj)
     await _save_artifact(session, project, "plan", content)
 
 
@@ -170,7 +219,9 @@ async def _build(*, project: Project, session: AsyncSession):
 
 @enforce_state(from_=[ProjectStatus.BUILD], to=ProjectStatus.TEST)
 async def _test(*, project: Project, session: AsyncSession):
-    await _save_artifact(session, project, "test_report", json.dumps({"passed": True}))
+    report = {"passed": True}
+    validate_schema(report, "test_report")
+    await _save_artifact(session, project, "test_report", json.dumps(report))
     await manager.broadcast({"type": "qa.report", "status": "passed"})
 
 

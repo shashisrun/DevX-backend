@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "dag": {
+      "type": "object",
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {"type": "string"},
+              "type": {"type": "string"},
+              "params": {"type": "object"}
+            },
+            "required": ["id", "type", "params"],
+            "additionalProperties": false
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": [
+              {"type": "string"},
+              {"type": "string"}
+            ],
+            "minItems": 2,
+            "maxItems": 2
+          }
+        }
+      },
+      "required": ["nodes", "edges"],
+      "additionalProperties": false
+    },
+    "summary": {"type": "string"}
+  },
+  "required": ["dag", "summary"],
+  "additionalProperties": false
+}
