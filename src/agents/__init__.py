@@ -15,6 +15,7 @@ from .contracts import (
     CriticOutput,
 )
 from .registry import agent_registry
+from .router import ModelRouter
 
 __all__ = [
     "PlannerInput",
@@ -32,4 +33,5 @@ __all__ = [
     "CriticInput",
     "CriticOutput",
     "agent_registry",
+    "ModelRouter",
 ]
